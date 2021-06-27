@@ -1,0 +1,17 @@
+---
+title: "Analysis"
+author: "Varsha Ujjinni Vijay Kumar"
+date: "27/06/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(haven)
+```
+
+```{r read-data}
+data <- read_dta("C_TestingData.dta")
+```
+
