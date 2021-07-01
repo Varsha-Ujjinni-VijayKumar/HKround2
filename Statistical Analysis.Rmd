@@ -9,9 +9,125 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(haven)
+library(viridis)
+library(broom)
 ```
 
 ```{r read-data}
 data <- read_dta("C_TestingData.dta")
+```
+
+```{r descr}
+data %>% filter(source == 3) %>% select(ID,sex,age,sle,phq) %>% DT::datatable(colnames = c('Patient ID', 'Gender', 'Age', 'stressful life events index', 'Depression index'))
+```
+
+```{r}
+data %>% 
+  filter(source == 3) %>% 
+  select(sle,phq) %>%
+  summarise(mean_sle = mean(sle),
+            mean_phq = mean(phq),
+            sd_sle = sd(sle),
+            sd_phq = sd(phq),
+            iqr_sle = IQR(sle),
+            iqr_phq = IQR(phq))
+```
+
+```{r}
+data %>% 
+  filter(source == 3)%>% 
+  mutate(gender = case_when(sex == 0 ~ "Male",
+                            sex == 1 ~"Female")) %>% 
+  select(gender,sle,phq) %>% 
+  ggplot(aes(x = sle)) + 
+  geom_bar() +
+  facet_wrap(~ gender)+
+    theme(legend.position = "none") +
+  labs(x = "stressful life index",title = "Distribution of SLE between the two groups")
+```
+
+```{r message=FALSE}
+data %>% 
+  filter(source == 3)%>% 
+  mutate(gender = case_when(sex == 0 ~ "Male",
+                            sex == 1 ~"Female")) %>% 
+  select(gender,sle,phq) %>%
+  ggplot(aes(x = phq)) +
+  geom_bar() +
+  scale_x_continuous(limits = c(0,20)) +
+  facet_wrap(~ gender)+
+  labs(x = "depression index",title = "Distribution of PHQ-9 between the two groups")
+```
+
+```{r message=FALSE}
+data %>% filter(filter == c("tsw","ssp")) %>% select(filter,sex,phq,sle,source) %>% filter(source == 3)%>% 
+  mutate(gender = case_when(sex == 0 ~ "Male",
+                            sex == 1 ~"Female")) %>% 
+  ggplot(aes(x = sle)) +
+  geom_bar() +
+  facet_grid(filter ~ gender)+
+  labs(x = "stressful life events index",title = "Distribution of SLE between the two groups")
+```
+
+```{r message=FALSE}
+data %>% filter(filter == c("tsw","ssp")) %>% select(filter,sex,phq,sle,source) %>% filter(source == 3)%>% 
+  mutate(gender = case_when(sex == 0 ~ "Male",
+                            sex == 1 ~"Female")) %>% 
+  ggplot(aes(x = phq)) +
+  geom_bar() +
+  facet_grid(filter ~ gender)+
+  scale_x_continuous(limits = c(0,20))
+  labs(x = "depression index",title = "Distribution of PHQ-9 between the two groups")
+```
+
+```{r reg_sle}
+wave3 <- data %>%  filter(source == 3)
+fit_sle <- lm(sle ~ age + sex, wave3)
+summary(fit_sle)
+```
+
+```{r}
+ggplot(fit_sle,aes(x = .fitted, y = .resid)) +
+  geom_point() +
+  geom_smooth(method = "lm")+
+  labs(x = "fitted values", y = "residuals", title = "Residual vs Fitted plot for stressful life events regression analysis")
+```
+
+
+```{r}
+fit_phq <- lm(phq ~ age + sex, wave3)
+summary(fit_phq)
+```
+
+```{r}
+ggplot(fit_phq,aes(x = .fitted, y = .resid)) +
+  geom_point() +
+  geom_smooth(method = "lm")+
+  labs(x = "fitted values", y = "residuals", title = "Residual vs Fitted plot for depression regression analysis")
+```
+
+
+```{r conf_sle}
+confint(fit_sle)
+```
+
+```{r conf_phq}
+confint(fit_phq)
+```
+
+```{r}
+w1 <- data %>% filter(filter == "w1")
+summary(lm(sle ~ sex + age, data = w1))
+```
+
+
+```{r}
+w2 <- data %>% filter(filter == "w2")
+summary(lm(sle ~ age + sex, data = w2))
+```
+
+
+```{r}
+
 ```
 
