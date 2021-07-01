@@ -2,36 +2,41 @@
 title: "Analysis"
 author: "Varsha Ujjinni Vijay Kumar"
 date: "27/06/2021"
-output: html_document
+output: 
+  bookdown::html_document2
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE,message=FALSE,warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(haven)
 library(viridis)
 library(broom)
+library(kableExtra)
 ```
 
 ```{r read-data}
 data <- read_dta("C_TestingData.dta")
 ```
 
-```{r descr}
-data %>% filter(source == 3) %>% select(ID,sex,age,sle,phq) %>% DT::datatable(colnames = c('Patient ID', 'Gender', 'Age', 'stressful life events index', 'Depression index'))
-```
 
-```{r}
+## About the data
+
+This data set is a result of a depression questionnaire given to the recruited patients in two different locations Tin Shui Wai and Sham Shui Po, which was followed up three different times of age. The depression index is indicated by `phq` (total score oh PHQ-9) in the data set and is abbreviated to be `PHQ-9` and stressful life events index is indicated by `sle` (total stress life events in the past year) in the data set and is abbreviated to be `SLE`.
+
+Let us have a glimpse of how the data set is given: 
+The following table is a data table made using the DT package in R. The table contains columns such as ID, sex, age, SLE and PHQ from the questionnaires. The data set has values from 3 different waves at different intervals of time. 
+
+```{r descr}
 data %>% 
   filter(source == 3) %>% 
-  select(sle,phq) %>%
-  summarise(mean_sle = mean(sle),
-            mean_phq = mean(phq),
-            sd_sle = sd(sle),
-            sd_phq = sd(phq),
-            iqr_sle = IQR(sle),
-            iqr_phq = IQR(phq))
+  select(ID,sex,age,sle,phq) %>%
+  DT::datatable(colnames = c('Patient ID', 'Gender', 'Age', 'stressful life events index', 'Depression index'))
 ```
+
+## Distribution Analysis 
+
+Now if we were to look at the distribution of the two genders for both SLE and PHQ individually.
 
 ```{r}
 data %>% 
@@ -41,12 +46,15 @@ data %>%
   select(gender,sle,phq) %>% 
   ggplot(aes(x = sle)) + 
   geom_bar() +
+  geom_vline(aes(xintercept = mean(sle)),color = "red",linetype = "dashed",size = 0.9)+
   facet_wrap(~ gender)+
     theme(legend.position = "none") +
   labs(x = "stressful life index",title = "Distribution of SLE between the two groups")
 ```
 
-```{r message=FALSE}
+From the plot above, it can be observed that there are number of females who are having more stressful life events than when compared to that of the males. There are observations in the female grid that the values for a few questions is around 6. both these graphs are right-skewed.
+
+```{r message=FALSE,warning=FALSE}
 data %>% 
   filter(source == 3)%>% 
   mutate(gender = case_when(sex == 0 ~ "Male",
@@ -54,37 +62,101 @@ data %>%
   select(gender,sle,phq) %>%
   ggplot(aes(x = phq)) +
   geom_bar() +
-  scale_x_continuous(limits = c(0,20)) +
+  scale_x_continuous(limits = c(0,27)) +
   facet_wrap(~ gender)+
+  geom_vline(aes(xintercept = mean(phq)),color = "red",linetype = "dashed",size = 0.9) +
   labs(x = "depression index",title = "Distribution of PHQ-9 between the two groups")
 ```
+Likewise, when we have a look at the distribution of the male to female depression index, it can be observed that the females are more depressed as their values ranges to 23. whereas, the grid of males, ends at approximately 15. And both these graphs show a right-skewed data. 
 
-```{r message=FALSE}
-data %>% filter(filter == c("tsw","ssp")) %>% select(filter,sex,phq,sle,source) %>% filter(source == 3)%>% 
+```{r message=FALSE,warning=FALSE}
+data %>% 
+  filter(filter == c("tsw","ssp")) %>% 
+  select(filter,sex,phq,sle,source) %>% 
+  filter(source == 3)%>% 
   mutate(gender = case_when(sex == 0 ~ "Male",
                             sex == 1 ~"Female")) %>% 
-  ggplot(aes(x = sle)) +
+  ggplot(aes(x = sle,fill = gender)) +
   geom_bar() +
   facet_grid(filter ~ gender)+
-  labs(x = "stressful life events index",title = "Distribution of SLE between the two groups")
+  theme(legend.position = "none")+
+  labs(x = "stressful life events index",
+       title = "Distribution of SLE between the two groups")
 ```
 
-```{r message=FALSE}
-data %>% filter(filter == c("tsw","ssp")) %>% select(filter,sex,phq,sle,source) %>% filter(source == 3)%>% 
+The above graph depicts the bar graphs which shows SLE faceted for the gender and also the places (TSW and SSP), it can be seen that in both the places:
+
+- The female patients have a higher number of values when compared to that of the male gender. 
+
+- Between TSW and SSP, the patients at TSW are more inclined towards stressful life events in case of females and more number of males have indicated to have higher amount of stressful life events in SSP. 
+
+```{r message=FALSE,warning=FALSE}
+data %>% 
+  filter(filter == c("tsw","ssp")) %>% 
+  select(filter,sex,phq,sle,source) %>% 
+  filter(source == 3)%>% 
   mutate(gender = case_when(sex == 0 ~ "Male",
                             sex == 1 ~"Female")) %>% 
-  ggplot(aes(x = phq)) +
+  ggplot(aes(x = phq,fill = gender)) +
   geom_bar() +
   facet_grid(filter ~ gender)+
-  scale_x_continuous(limits = c(0,20))
-  labs(x = "depression index",title = "Distribution of PHQ-9 between the two groups")
+  scale_x_continuous(limits = c(0,23))+
+  theme(legend.position = "none")+
+  labs(x = "depression index",
+       title = "Distribution of PHQ-9 between the two groups")
 ```
+
+The above graph depicts the bar graphs which shows PHQ faceted for the gender and also the places (TSW and SSP), it can be seen that in both the places:
+
+- The depression index range is higher in the case of females than in the males. 
+
+- The females in TSW indicated higher value of depression than those from SSP(~25).
+
+- The males in SSP have a higher value of depression than those from TSW(~17).
+
+From the above two facted bar graphs, it can be inferred in a way that the stressful life events, are somehow inter-related to the depression index. Meaning that the people who have a higher index of stressful life events are more likely to have a higher range of depression index. 
+
+This is however in the case of a general overview in between genders. 
+
+```{r message=FALSE,warning=FALSE}
+data %>% 
+  filter(source == 3)%>% 
+  mutate(gender = case_when(sex == 0 ~ "Male",
+                            sex == 1 ~"Female")) %>% 
+  select(gender,sle,phq) %>% 
+  ggplot(aes(y = ..density..)) +
+  geom_density(aes(x = sle,
+                   fill = "blue"))+
+  geom_density(aes(x = phq, 
+                   fill = "red"),
+               alpha = 0.4)+
+  scale_x_continuous(limits = c(0,15))+
+  facet_wrap(~ gender) +
+  labs(title = "Density plot visualisation of distribution for wave 3 for the two groups", 
+       x = "Index")+
+  theme(legend.position = "bottom")+
+  scale_fill_discrete(name = "Indexes", 
+                      labels = c("stresfull index","depression index"))
+```
+Let us have a look at the distribution of the two groups using a histogram, the above graph is a histogram which shows the distribution of SLE and PHQ between males and females during the final wave (w3), as from the above bar graphs, the females have a higher range of both SLE and PHQ than that of males. Although the bar graphs depict a better view of the above statements. 
+
+## Regression Analysis 
+
+Coming to make models for the data, let us have a look at the linear regression of the two groups with age and sex as their predictor variables in Wave 3. 
 
 ```{r reg_sle}
 wave3 <- data %>%  filter(source == 3)
 fit_sle <- lm(sle ~ age + sex, wave3)
 summary(fit_sle)
 ```
+
+In wave 3 , the above summary can be interpreted as:
+
+- The model `sle ~ age+sex`, has a p-value of 0.5295, which says that the age and sex does not influence the values of stressful events of a persons life.Or tells us that they are not the only predictors. 
+
+- The minimum residual value for SLE is -0.6, median residual is -0.5 and the maximum residual is 5.38.
+
+- It also shows the Residual std error is 1.046 which is a considerably low value which is not completely low but tells us that it could be a good fit, but  not the best. 
 
 ```{r}
 ggplot(fit_sle,aes(x = .fitted, y = .resid)) +
@@ -94,10 +166,20 @@ ggplot(fit_sle,aes(x = .fitted, y = .resid)) +
 ```
 
 
+The above graph shows the residual graph for `fit_sle`, as can be seen the model does not fir the data as well. As most of the points are away from the middle blue line.
+
 ```{r}
 fit_phq <- lm(phq ~ age + sex, wave3)
 summary(fit_phq)
 ```
+
+In wave 3 , the above summary can be interpreted as:
+
+- The model `phq ~ age+sex`, has a p-value of 0.0985, which says that the age and sex does not influence the values of stressful events of a persons life.Or tells us that they are not the only predictors and the model is not a good fit to the response variable prediction. 
+
+- The minimum residual value for SLE is -48.5, median residual is -9.5 and the maximum residual is 8944.4.
+
+- It also shows the Residual std error is 263.7 which is a considerably low value which is not completely low but tells us that it could be a good fit, but  not the best. 
 
 ```{r}
 ggplot(fit_phq,aes(x = .fitted, y = .resid)) +
@@ -106,28 +188,81 @@ ggplot(fit_phq,aes(x = .fitted, y = .resid)) +
   labs(x = "fitted values", y = "residuals", title = "Residual vs Fitted plot for depression regression analysis")
 ```
 
-
-```{r conf_sle}
-confint(fit_sle)
-```
-
-```{r conf_phq}
-confint(fit_phq)
-```
+The above graph shows the residual plot for `fit_phq` shows a better fit but not the best, there are outliers in the graph. 
 
 ```{r}
-w1 <- data %>% filter(filter == "w1")
-summary(lm(sle ~ sex + age, data = w1))
+w1_sle <- data %>% filter(source == 1)
+summary(lm(sle ~ sex + age, data = w1_sle))
 ```
 
 
 ```{r}
-w2 <- data %>% filter(filter == "w2")
-summary(lm(sle ~ age + sex, data = w2))
+w2_sle <- data %>% filter(source == 2)
+summary(lm(sle ~ age + sex, data = w2_sle))
 ```
-
 
 ```{r}
-
+w1_phq <- data %>% filter(source == 1)
+summary(lm(phq ~ sex + age, data = w1_phq))
 ```
+
+```{r}
+w2_phq <- data %>% filter(source == 2)
+summary(lm(phq ~ sex + age, data = w2_phq))
+```
+
+```{r sle, fig.cap="Stressful index for waves 1-3",message=FALSE,warning=FALSE}
+p1 <- data %>%  filter(source == 1) %>% ggplot(aes(x = sle)) +
+  geom_bar()
+p2 <- data %>%  filter(source == 2) %>% ggplot(aes(x = sle)) +
+  geom_bar() 
+p3 <- data %>%  filter(source == 3) %>% ggplot(aes(x = sle)) +
+  geom_bar()
+
+ggpubr::ggarrange(p1, p2, p3)
+```
+
+From the graphs \@ref(fig:sle) it can be depicted that as the age increased, the stressful life events have increased by looking at the scales and the values of the bar graphs. 
+
+```{r phq, fig.cap="Depression index for waves 1-3",message=FALSE,warning=FALSE}
+p4 <- data %>%  filter(source == 1) %>% ggplot(aes(x = phq)) +
+  geom_bar()
+p5 <- data %>%  filter(source == 2) %>% ggplot(aes(x = phq)) +
+  geom_bar() 
+p6 <- data %>%  filter(source == 3) %>% ggplot(aes(x = phq)) +
+  geom_bar()+
+  scale_x_continuous(limits = c(0,25))
+
+ggpubr::ggarrange(p4, p5, p6)
+```
+
+From the graphs \@ref(fig:phq) can be depicted that as the age increased, the depression range have increased by looking at the scales and the values of the bar graphs. 
+
+
+## Summary
+
+From the above analysis, the data gives an overview of depression index and stressful life events index which tells us that the females have a greater ranges of SLE and PHQ than that of males. Within the genders, the females in TSW are far greater depression index than males in TSW. In SSP, the males have greater depression index than females. 
+
+The predictor variables sex and age are not the only variables for checking the stressful life events index and the depression index, there are better models that can be built with other predictor variables. 
+
+Finally, over the three waves with different intervals, the values of SLE and PHQ are all changing, with the range increasing over time. 
+
+
+## References
+
+-  Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software,
+  4(43), 1686, https://doi.org/10.21105/joss.01686
+
+- Hadley Wickham and Evan Miller (2020). haven: Import and Export 'SPSS', 'Stata' and
+  'SAS' Files. R package version 2.3.1. https://CRAN.R-project.org/package=haven
+
+- Simon Garnier (2018). viridis: Default Color Maps from 'matplotlib'. R package version
+  0.5.1. https://CRAN.R-project.org/package=viridis
+
+-David Robinson, Alex Hayes and Simon Couch (2021). broom: Convert Statistical Objects
+  into Tidy Tibbles. R package version 0.7.5. https://CRAN.R-project.org/package=broom
+  
+- Hao Zhu (2021). kableExtra: Construct Complex Table with 'kable' and Pipe Syntax. R
+  package version 1.3.4. https://CRAN.R-project.org/package=kableExtra
+
 
